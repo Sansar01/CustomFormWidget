@@ -1,0 +1,41 @@
+﻿@model Sitefinity_Web.Mvc.Models.CustomForm
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    <div>
+        @using (Html.BeginForm("SubmitForm", "CustomForm", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            <div>
+                <label for="Title">Title:</label>
+                <input type="text" id="Title" name="Title" class="form-control" required>
+            </div>
+            <div>
+                <label for="Description">Description:</label>
+                <input type="text" id="Description" name="Description" class="form-control" required>
+            </div>
+            <div>
+                <label for="Tags">Tags:</label>
+                <input type="text" id="Tags" name="Tags" class="form-control" required>
+            </div>
+            <div>
+                <label for="Category">Category:</label>
+                <input type="text" id="Category" name="Category" class="form-control" required>
+            </div>
+            <div>
+                <label for="ItemImage">Image:</label>
+                <input type="file" id="ItemImage" name="ItemImage" accept="image/*" />
+            </div>
+            <button type="submit">Submit</button>
+        }
+    </div>
+
+    
+
+</body>
+</html>
