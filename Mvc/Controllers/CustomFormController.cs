@@ -121,6 +121,8 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             }
 
+              // Publish the item
+                customRecord.ApprovalWorkflowState = "Published";
 
             dynamicModuleManager.SaveChanges();
 
