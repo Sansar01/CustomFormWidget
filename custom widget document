@@ -1,0 +1,56 @@
+#create a custom widget with a form to create a record in dynamic module uisng asp.net mvc
+
+##create a item in dynamic module - https://www.progress.com/documentation/sitefinity-cms/example-retrieve-and-create-child-items
+
+
+for ex -   DynamicModuleManager dynamicModuleManager = DynamicModuleManager.GetManager();
+  Type customRecordType = TypeResolutionService.ResolveType("Telerik.Sitefinity.DynamicTypes.Model.Dynamic_Module.Dynamic_module");
+
+  DynamicContent customRecord = dynamicModuleManager.CreateDataItem(customRecordType);
+
+
+  customRecord.SetString("Title", CustomForm.Title);
+  customRecord.SetString("Description", CustomForm.Description);
+
+##create a tag first in libraries then sitefinity fetched created tag in dynamic module item
+
+link - https://www.progress.com/documentation/sitefinity-cms/add-and-remove-taxonomies-add-tags
+after putting this code in editor put this below code
+
+
+TaxonomyManager taxonomyManager = TaxonomyManager.GetManager();
+ var Tag = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags").FirstOrDefault();
+    if(Tag != null)
+    {
+        dynamicModuleItem.Organizer.AddTaxa("Tags", Tag.Id);
+    }
+ ##create a category first in libraries then sitefinity fetched created category in dynamic module item
+
+link - https://www.progress.com/documentation/sitefinity-cms/add-and-remove-taxonomies-add-categories
+
+after putting this code in editor put this below code
+TaxonomyManager taxonomyManager = TaxonomyManager.GetManager();
+    var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Categories").FirstOrDefault();
+    if(Category != null)
+    {
+        dynamicModuleItem.Organizer.AddTaxa("Category", Category.Id);
+    }
+
+
+## create a album in the libraires in the sitefinity
+
+link - https://www.progress.com/documentation/sitefinity-cms/for-developers-create-folders-inside-libraries
+or link - https://www.progress.com/documentation/sitefinity-cms/for-developers-create-image-libraries
+
+then to do this 
+create image in particular album 
+link - https://www.progress.com/documentation/sitefinity-cms/for-developers-create-images
+put this code after 
+
+ LibrariesManager itemImageManager = LibrariesManager.GetManager();
+    var itemImageItem = itemImageManager.GetImages().FirstOrDefault(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Master);
+    if (itemImageItem != null)
+    {
+        // This is how we relate an item
+        dynamicModuleItem.CreateRelation(itemImageItem, "ItemImage");
+    }
