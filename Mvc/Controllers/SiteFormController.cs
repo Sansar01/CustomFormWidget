@@ -1,82 +1,80 @@
 ﻿using Sitefinity_Web.Mvc.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using Telerik.Sitefinity.Abstractions;
 using Telerik.Sitefinity.DynamicModules.Model;
 using Telerik.Sitefinity.DynamicModules;
 using Telerik.Sitefinity.Mvc;
 using Telerik.Sitefinity.Utilities.TypeConverters;
 using Telerik.Sitefinity.Model;
+using Telerik.Sitefinity;
+using DocumentFormat.OpenXml.Bibliography;
+using System.Text.RegularExpressions;
 using Telerik.Sitefinity.Modules.Libraries;
 using Telerik.Sitefinity.RelatedData;
-using Telerik.Sitefinity.Security;
-using System.Drawing;
-using DocumentFormat.OpenXml.Vml;
-using System.IO;
-using System.Text.RegularExpressions;
-
-using Telerik.Sitefinity.Libraries.Model;
-using Telerik.Sitefinity.Modules.Libraries.Web.UI.Designers;
-using Image = Telerik.Sitefinity.Libraries.Model.Image;
-using Telerik.Sitefinity.Workflow;
-using Telerik.Sitefinity.Taxonomies;
 using Telerik.Sitefinity.Taxonomies.Model;
-using Telerik.Sitefinity.Taxonomies.Web;
+using Telerik.Sitefinity.Taxonomies;
+using Telerik.Sitefinity.Libraries.Model;
+using Telerik.Sitefinity.Multisite;
+using Telerik.Sitefinity.Services;
+using Telerik.Sitefinity.DynamicModules.Builder;
 using Telerik.Web.UI.PageLayout;
-using Microsoft.ProjectServer.Client;
-using Amazon.S3.Model;
-using DocumentFormat.OpenXml.Bibliography;
-using static Telerik.Sitefinity.Security.SecurityConstants.Sets;
-using Album = Telerik.Sitefinity.Libraries.Model.Album;
-
-using DocumentFormat.OpenXml.ExtendedProperties;
-using Telerik.Sitefinity.Lifecycle;
-using Telerik.Sitefinity;
-using Telerik.Sitefinity.Data;
-
-
-
 
 namespace Sitefinity_Web.Mvc.Controllers
 {
-    [ControllerToolboxItem(Name = "CustomFormWidget", Title = "Custom Form Widget", SectionName = "Custom Widgets")]
-    public class CustomFormController : Controller
-    {
 
+    [ControllerToolboxItem(Name = "SiteForm", Title = "Site Form Widget", SectionName = "Site Widgets")]
+    public class SiteFormController : Controller
+    {
         Guid albumId;
         string albumTitle = string.Empty;
+        string providerName = string.Empty;
 
-        // GET: CustomForm
+
+        // GET: SiteForm
         public ActionResult Index()
         {
-
-
-            return View("Index");
+            return View();
         }
 
         [HttpPost]
-        public ActionResult SubmitForm(CustomForm customData,HttpPostedFileBase itemImage)
-        { 
-            var CustomForm = new CustomForm();
-            CustomForm.Title = customData.Title;
-            CustomForm.Description = customData.Description;
+        public ActionResult AddForm(SiteModel model)
+        {
+
+            var multisiteContext = SystemManager.CurrentContext as MultisiteContext;
+
+            var sites = multisiteContext.GetSites();
+
+
+            foreach (var sitename in sites)
+            {
+                if (sitename.Name == "mySite")
+                {
+                    GetProviders(sitename);
+                }
+            }
+
+
+           var CustomForm = new SiteModel();
+            CustomForm.Title = model.Title;
+            CustomForm.Description = model.Description;
             //CustomForm.Tags = customData.Tags;
             //CustomForm.ItemImage = customData.ItemImage;
 
 
-            string tags = customData.Tags;
-            
-            string category = customData.Category;
+            string tags = model.Tags;
 
-            
+            string category = model.Category;
+
+
 
 
             // Create a new item in the dynamic module
-            DynamicModuleManager dynamicModuleManager = DynamicModuleManager.GetManager();
-            Type customRecordType = TypeResolutionService.ResolveType("Telerik.Sitefinity.DynamicTypes.Model.Dynamic_Module.Dynamic_module");
+            DynamicModuleManager dynamicModuleManager = DynamicModuleManager.GetManager(providerName);
+            Type customRecordType = TypeResolutionService.ResolveType("Telerik.Sitefinity.DynamicTypes.Model.SiteModule.Sitemodule");
 
             DynamicContent customRecord = dynamicModuleManager.CreateDataItem(customRecordType);
 
@@ -95,35 +93,35 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             addCategory(category);
 
-            addCategories(customRecord,category);
+            addCategories(customRecord, category);
 
 
             // creating album 
 
             addAlbum();
 
-            if (itemImage != null && itemImage.ContentLength > 0)
-            {
+            //if (itemImage != null && itemImage.ContentLength > 0)
+            //{
 
 
-                // Generate a new GUID for the image
-                Guid masterImageId = Guid.NewGuid();
-                // Obtain the image stream from the uploaded file
-                Stream imageStream = itemImage.InputStream;
+            //    // Generate a new GUID for the image
+            //    Guid masterImageId = Guid.NewGuid();
+            //    // Obtain the image stream from the uploaded file
+            //    Stream imageStream = itemImage.InputStream;
 
-                // Obtain the image file name
-                string imageFileName = System.IO.Path.GetFileName(itemImage.FileName);
+            //    // Obtain the image file name
+            //    string imageFileName = System.IO.Path.GetFileName(itemImage.FileName);
 
-                // Obtain the image extension from the file name
-                string imageExtension = System.IO.Path.GetExtension(imageFileName);
-
-
-                string imageTitle = System.IO.Path.GetFileNameWithoutExtension(imageFileName);
+            //    // Obtain the image extension from the file name
+            //    string imageExtension = System.IO.Path.GetExtension(imageFileName);
 
 
-                addImage(masterImageId,imageStream, imageFileName, imageExtension, imageTitle,albumId,customRecord);
+            //    string imageTitle = System.IO.Path.GetFileNameWithoutExtension(imageFileName);
 
-            }
+
+            //    addImage(masterImageId, imageStream, imageFileName, imageExtension, imageTitle, albumId, customRecord);
+
+            //}
 
             // Publish the item
             //customRecord.ApprovalWorkflowState = "Published";
@@ -135,7 +133,27 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             dynamicModuleManager.SaveChanges();
 
-            return View("Index", CustomForm);
+
+            return View("Index", model);
+        }
+
+
+        IDictionary<string, string[]> GetProviders(ISite site)
+        {
+            var result = new Dictionary<string, string[]>();
+
+            var dynamicModuleNames = ModuleBuilderManager.GetActiveTypes().Select(t => t.ModuleName).Distinct();
+            foreach (var dynamicModuleName in dynamicModuleNames)
+            {
+                    var typeProviders = site.GetProviders(dynamicModuleName);
+
+                foreach (var typeProvider in typeProviders)
+                {
+                    providerName = typeProvider.ProviderName;
+                }
+            }
+           
+            return result;
         }
 
 
@@ -169,8 +187,8 @@ namespace Sitefinity_Web.Mvc.Controllers
         {
             var taxonomyManager = TaxonomyManager.GetManager();
             var Tag = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
- 
-                foreach (var Tags in Tag.Where(w => w.Title.ToLower() == tagname.ToLower()))
+
+            foreach (var Tags in Tag.Where(w => w.Title.ToLower() == tagname.ToLower()))
             {
                 if (Tags != null)
                 {
@@ -215,7 +233,7 @@ namespace Sitefinity_Web.Mvc.Controllers
             taxonomyManager.SaveChanges();
         }
 
-        public void addCategories(DynamicContent customRecord ,string  categoryName)
+        public void addCategories(DynamicContent customRecord, string categoryName)
         {
             TaxonomyManager taxonomyManager = TaxonomyManager.GetManager();
             var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Categories");
@@ -237,7 +255,7 @@ namespace Sitefinity_Web.Mvc.Controllers
             var manager = LibrariesManager.GetManager();
             Album albumManager = manager.GetAlbums().Where(a => a.Title == "ImageAlbumTitle1").FirstOrDefault();
 
-            if(albumManager == null)
+            if (albumManager == null)
             {
                 //creates an image album(library)
                 var imagesAlbum = manager.CreateAlbum();
@@ -250,13 +268,13 @@ namespace Sitefinity_Web.Mvc.Controllers
             }
         }
 
-        public void checkAlbum(Album imagesAlbum) 
+        public void checkAlbum(Album imagesAlbum)
         {
             albumId = imagesAlbum.Id;
             albumTitle = imagesAlbum.Title;
         }
 
-        public void addImage(Guid masterImageId,Stream imageStream,string imageFileName,string imageExtension,string imageTitle,Guid albumId,DynamicContent customRecord)
+        public void addImage(Guid masterImageId, Stream imageStream, string imageFileName, string imageExtension, string imageTitle, Guid albumId, DynamicContent customRecord)
         {
             LibrariesManager librariesManager = LibrariesManager.GetManager();
             Image image = librariesManager.GetImages().Where(i => i.Id == masterImageId).FirstOrDefault();
@@ -300,5 +318,6 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             }
         }
+
     }
 }
