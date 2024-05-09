@@ -26,5 +26,9 @@ namespace Sitefinity_Web.Mvc.Models
 
         public Image ItemImage { get;set; }
 
+        public static implicit operator CustomForm(string v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

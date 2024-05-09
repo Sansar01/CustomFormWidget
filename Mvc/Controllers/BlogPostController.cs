@@ -16,6 +16,7 @@ using Telerik.Sitefinity.Workflow;
 using Telerik.Sitefinity.DynamicModules;
 using Telerik.Sitefinity.Utilities.TypeConverters;
 using Telerik.Sitefinity.Modules.News;
+using Guid = System.Guid;
 
 namespace Sitefinity_Web.Mvc.Controllers
 {

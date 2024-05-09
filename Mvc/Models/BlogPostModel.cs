@@ -15,5 +15,10 @@ namespace Sitefinity_Web.Mvc.Models
 
 
         public string Category { get; set; }
+
+        public static explicit operator string(BlogPostModel v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

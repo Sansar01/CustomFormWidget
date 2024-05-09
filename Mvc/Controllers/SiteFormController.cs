@@ -22,6 +22,7 @@ using Telerik.Sitefinity.Multisite;
 using Telerik.Sitefinity.Services;
 using Telerik.Sitefinity.DynamicModules.Builder;
 using Telerik.Web.UI.PageLayout;
+using Guid = System.Guid;
 
 namespace Sitefinity_Web.Mvc.Controllers
 {
