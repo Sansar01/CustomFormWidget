@@ -9,8 +9,11 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using Telerik.Sitefinity.Blogs.Model;
+using Telerik.Sitefinity.DynamicModules.Model;
 using Telerik.Sitefinity.Modules.Blogs;
 using Telerik.Sitefinity.Mvc;
+using Telerik.Sitefinity.Taxonomies.Model;
+using Telerik.Sitefinity.Taxonomies;
 using Telerik.Sitefinity.Workflow;
 using Guid = System.Guid;
 
@@ -20,47 +23,35 @@ namespace Sitefinity_Web.Mvc.Controllers
     public class PharmacyApiController : Controller
     {
         // GET: PharmacyApi
+        Uri apiUrl = new Uri("https://www.pharmacyitk.com.au/wp-json/wp/v2/posts");
         public ActionResult Index()
          {
-            return View();
-        }
-
-        [HttpPost]
-        public ActionResult ButtonSubmit(string Title)
-        {
-            getApiData();
-            return View("Index");
-        }
-        private async Task<List<BlogPostData>> getApiData()
-        {
-            string apiUrl = "https://www.pharmacyitk.com.au/wp-json/wp/v2/posts";
             List<BlogPostData> dataObj = new List<BlogPostData>();
 
             HttpClient client = new HttpClient();
+            client.BaseAddress = apiUrl;
 
-            HttpResponseMessage response = await client.GetAsync(apiUrl);
+            HttpResponseMessage response = client.GetAsync(client.BaseAddress).Result;
 
             if (response.IsSuccessStatusCode)
             {
-                string jsonResponse = await response.Content.ReadAsStringAsync(); ;
+                string jsonResponse = response.Content.ReadAsStringAsync().Result;
                 dataObj = JsonConvert.DeserializeObject<List<BlogPostData>>(jsonResponse);
 
             }
-            return retriveData(dataObj);
+            retriveData(dataObj);
+            return View();
         }
+
 
         private List<BlogPostData> retriveData(List<BlogPostData> dataObj)
         {
 
             BlogsManager blogsManager = BlogsManager.GetManager();
-            Blog blog = blogsManager.GetBlogs().Where(b => b.Title == "BlogPostApi").FirstOrDefault();
+            Blog blog = blogsManager.GetBlogs().Where(b => b.Title == "Blog_Api").FirstOrDefault();
 
             foreach (var post in dataObj)
             {
-
-                int yourIntId = post.id;
-
-
                 Guid Id = Guid.NewGuid();
                 createBlogPost(Id, post, blog);
             }
@@ -99,6 +90,8 @@ namespace Sitefinity_Web.Mvc.Controllers
                 //Recompiles and validates the url of the blog.
                 blogsManager.RecompileAndValidateUrls(blogPost);
 
+                addTags(post.id,blogPost);
+
                 //Save the changes.
                 blogsManager.SaveChanges();
 
@@ -112,5 +105,76 @@ namespace Sitefinity_Web.Mvc.Controllers
             }
         }
 
+        public void addTags(int tagId,BlogPost blogPost)
+        {
+            List<TagsPostApi> tagObj = new List<TagsPostApi>();
+            string apiUrl = "https://www.pharmacyitk.com.au/wp-json/wp/v2/tags?post=" + tagId;
+
+            HttpClient client = new HttpClient();
+
+            HttpResponseMessage response = client.GetAsync(apiUrl).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string jsonResponse = response.Content.ReadAsStringAsync().Result;
+                tagObj = JsonConvert.DeserializeObject<List<TagsPostApi>>(jsonResponse);
+
+            }
+            var taxonomyManager = TaxonomyManager.GetManager();
+            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
+
+
+            foreach (var tagName in tagObj)
+            {
+                if(tagName.Taxonomy =="post_tag")
+                {
+                    string tags = tagName.Name;
+
+                    //Get the Tags taxonomy
+                    var tagTaxonomy = taxonomyManager.GetTaxonomies<FlatTaxonomy>().SingleOrDefault(s => s.Name == "Tags");
+
+                    if (tagTaxonomy == null) return;
+
+                    //Create a new FlatTaxon
+                    var taxon = taxonomyManager.CreateTaxon<FlatTaxon>();
+
+                    //Associate the item with the flat taxonomy
+                    taxon.FlatTaxonomy = tagTaxonomy;
+
+                    taxon.Name = Regex.Replace(tags.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
+                    taxon.Title = tags;
+                    taxon.UrlName = Regex.Replace(tags.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
+
+                    //Add it to the list
+                    tagTaxonomy.Taxa.Add(taxon);
+
+                    taxonomyManager.SaveChanges();
+                }
+               
+            }
+                           
+            if(Tags!=null)
+            {
+                addTaxon(tagObj,blogPost);
+            }
+        }
+
+        public void addTaxon(List<TagsPostApi> ListTagsObj,BlogPost blogPost)
+        {
+            var taxonomyManager = TaxonomyManager.GetManager();
+            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
+
+            foreach (var getTag in ListTagsObj)
+            {
+                foreach (var ItemTags in Tags.Where(w => w.Title.ToLower() == getTag.Name.ToLower()))
+                {
+                    if (ItemTags != null)
+                    {
+                        blogPost.Organizer.AddTaxa("Tags", ItemTags.Id);
+
+                    }
+                }
+            }
+        }
     }
 }
