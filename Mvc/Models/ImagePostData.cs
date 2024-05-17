@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using static Sitefinity_Web.Mvc.Models.ImagePostData;
+
 
 namespace Sitefinity_Web.Mvc.Models
 {
@@ -32,7 +35,9 @@ namespace Sitefinity_Web.Mvc.Models
             public string template { get; set; }
             public Meta meta { get; set; }
             public object[] acf { get; set; }
-            public Smush smush { get; set; }
+
+            //[Newtonsoft.Json.JsonConverter(typeof(SmushConverter))]
+            //public Smush smush { get; set; }
             public Description description { get; set; }
             public Caption caption { get; set; }
             public string alt_text { get; set; }
@@ -63,34 +68,40 @@ namespace Sitefinity_Web.Mvc.Models
             public int _monsterinsights_sitenote_category { get; set; }
         }
 
-        public class Smush
-        {
-            public Stats stats { get; set; }
-            public Sizes sizes { get; set; }
-        }
+        
+        //public class Smush
+        //{
+        //    public string Status { get; set; }
+        //    public Stats stats { get; set; }
+        //    public Sizes sizes { get; set; }
+        //}
 
-        public class Stats
-        {
-            public float percent { get; set; }
-            public int bytes { get; set; }
-            public int size_before { get; set; }
-            public int size_after { get; set; }
-            public float time { get; set; }
-            public string api_version { get; set; }
-            public int lossy { get; set; }
-            public int keep_exif { get; set; }
-        }
+        //public class Stats
+        //{
+        //    public float percent { get; set; }
+        //    public int bytes { get; set; }
+        //    public int size_before { get; set; }
+        //    public int size_after { get; set; }
+        //    public float time { get; set; }
+        //    public string api_version { get; set; }
 
-        public class Sizes
-        {
-            public Medium medium { get; set; }
-            public Large large { get; set; }
-            public Thumbnail thumbnail { get; set; }
-            public Medium_Large medium_large { get; set; }
-            public _1536X1536 _1536x1536 { get; set; }
-            public _2048X2048 _2048x2048 { get; set; }
-            public Wp_Scaled wp_scaled { get; set; }
-        }
+        //    [Newtonsoft.Json.JsonConverter(typeof(FlexibleBooleanConverter))]
+        //    public bool lossy { get; set; }
+
+       
+        //    public int keep_exif { get; set; }
+        //}
+
+        //public class Sizes
+        //{
+        //    public Medium medium { get; set; }
+        //    public Large large { get; set; }
+        //    public Thumbnail thumbnail { get; set; }
+        //    public Medium_Large medium_large { get; set; }
+        //    public _1536X1536 _1536x1536 { get; set; }
+        //    public _2048X2048 _2048x2048 { get; set; }
+        //    public Wp_Scaled wp_scaled { get; set; }
+        //}
 
         public class Medium
         {
@@ -309,4 +320,79 @@ namespace Sitefinity_Web.Mvc.Models
         }
 
     }
+
+    //public class FlexibleBooleanConverter : Newtonsoft.Json.JsonConverter
+    //{
+    //    public override bool CanConvert(Type objectType)
+    //    {
+    //        return objectType == typeof(bool);
+    //    }
+
+    //    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    //    {
+    //        if (reader.TokenType == JsonToken.Boolean)
+    //        {
+    //            return reader.Value;
+    //        }
+    //        if (reader.TokenType == JsonToken.Integer)
+    //        {
+    //            int intValue = Convert.ToInt32(reader.Value);
+    //            return intValue == 1;
+    //        }
+    //        if (reader.TokenType == JsonToken.String)
+    //        {
+    //            if (bool.TryParse((string)reader.Value, out bool result))
+    //            {
+    //                return result;
+    //            }
+    //            if (int.TryParse((string)reader.Value, out int intResult))
+    //            {
+    //                return intResult == 1;
+    //            }
+    //        }
+    //        throw new JsonReaderException($"Unexpected token {reader.TokenType} when parsing boolean.");
+    //    }
+
+    //    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    //    {
+    //        writer.WriteValue(value);
+    //    }
+    //}
+
+    //public class SmushConverter : Newtonsoft.Json.JsonConverter
+    //{
+    //    public override bool CanConvert(Type objectType)
+    //    {
+    //        return objectType == typeof(Smush);
+    //    }
+
+    //    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    //    {
+    //        if (reader.TokenType == JsonToken.StartObject)
+    //        {
+    //            return serializer.Deserialize<Smush>(reader);
+    //        }
+    //        if (reader.TokenType == JsonToken.String)
+    //        {
+    //            return new Smush { Status = reader.Value.ToString() };
+    //        }
+    //        throw new JsonSerializationException($"Unexpected token {reader.TokenType} when parsing smush.");
+    //    }
+
+    //    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    //    {
+    //        var smush = value as Smush;
+    //        if (smush != null)
+    //        {
+    //            if (!string.IsNullOrEmpty(smush.Status))
+    //            {
+    //                writer.WriteValue(smush.Status);
+    //            }
+    //            else
+    //            {
+    //                serializer.Serialize(writer, value);
+    //            }
+    //        }
+    //    }
+    //}
 }

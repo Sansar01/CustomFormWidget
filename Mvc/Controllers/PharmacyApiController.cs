@@ -26,6 +26,8 @@ using Azure;
 using System.Net;
 using AngleSharp.Dom;
 using static ServiceStack.Host.HttpListener.ListenerRequest;
+using Newtonsoft.Json.Linq;
+using DocumentFormat.OpenXml.Bibliography;
 
 
 namespace Sitefinity_Web.Mvc.Controllers
@@ -38,31 +40,84 @@ namespace Sitefinity_Web.Mvc.Controllers
 
         // GET: PharmacyApi
         Uri apiUrl = new Uri("https://www.pharmacyitk.com.au/wp-json/wp/v2/posts");
+        //public ActionResult Index()
+        //{
+        //    List<BlogPostData> dataObj = new List<BlogPostData>();
+
+        //    HttpClient client = new HttpClient();
+        //    client.BaseAddress = apiUrl;
+
+        //    HttpResponseMessage response = client.GetAsync(client.BaseAddress).Result;
+
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        string jsonResponse = response.Content.ReadAsStringAsync().Result;
+        //        dataObj = JsonConvert.DeserializeObject<List<BlogPostData>>(jsonResponse);
+
+        //    }
+        //        retriveData(dataObj);
+        //    return View(dataObj);
+        //}
+
         public ActionResult Index()
         {
             List<BlogPostData> dataObj = new List<BlogPostData>();
+            int totalItems = 0;
+            int itemsPerPage = 100; // Specify the number of items per page
 
             HttpClient client = new HttpClient();
-            client.BaseAddress = apiUrl;
 
-            HttpResponseMessage response = client.GetAsync(client.BaseAddress).Result;
-
-            if (response.IsSuccessStatusCode)
+            // First, make a request to get the total number of items
+            HttpResponseMessage totalResponse = client.GetAsync($"{apiUrl}?per_page=1").Result;
+            if (totalResponse.IsSuccessStatusCode)
             {
-                string jsonResponse = response.Content.ReadAsStringAsync().Result;
-                dataObj = JsonConvert.DeserializeObject<List<BlogPostData>>(jsonResponse);
-
+                // Retrieve the x-wp-total header value
+                if (totalResponse.Headers.TryGetValues("x-wp-total", out IEnumerable<string> totalItemsValues))
+                {
+                    string totalItemsString = totalItemsValues.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(totalItemsString))
+                    {
+                        int.TryParse(totalItemsString, out totalItems);
+                    }
+                }
             }
+
+            // Calculate the number of pages needed
+            int totalPages = (int)Math.Ceiling((double)totalItems / itemsPerPage);
+
+            // Now, loop through each page to retrieve all items
+            for (int currentPage = 1; currentPage <= totalPages; currentPage++)
+            {
+                HttpResponseMessage response = client.GetAsync($"{apiUrl}?per_page={itemsPerPage}&page={currentPage}").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    string data = response.Content.ReadAsStringAsync().Result;
+                    List<BlogPostData> pagePosts = JsonConvert.DeserializeObject<List<BlogPostData>>(data);
+                    dataObj.AddRange(pagePosts);
+                }
+            }
+
+            //foreach (var post in dataObj)
+            //{
+            //    int postId = post.id;
+            //    //int featureMedia = post.featured_media;
+            //    // Call the function to fetch tags
+            //    int[] tags = post.tags;
+            //    //GetFeatureData(postId);
+            //    //GetTagsAsync(postId);
+            //    //BlogPost(post);
+            //}
+
             retriveData(dataObj);
+
+            // Return the view with the fetched data
             return View(dataObj);
         }
-
-
         private ActionResult retriveData(List<BlogPostData> dataObj)
         {
 
             BlogsManager blogsManager = BlogsManager.GetManager();
-            Blog blog = blogsManager.GetBlogs().Where(b => b.Title == "Blogapi").FirstOrDefault();
+            Blog blog = blogsManager.GetBlogs().Where(b => b.Title == "Blog_Api").FirstOrDefault();
 
             foreach (var post in dataObj)
             {
@@ -105,7 +160,7 @@ namespace Sitefinity_Web.Mvc.Controllers
                 //Recompiles and validates the url of the blog.
                 blogsManager.RecompileAndValidateUrls(blogPost);
 
-                
+
                 addTags(post.id, blogPost);
                 addCategory(post.id, blogPost);
                 getImage(post.id, blogPost);
@@ -140,7 +195,8 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             }
             var taxonomyManager = TaxonomyManager.GetManager();
-            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
+            //Get the Tags taxonomy
+            var tagTaxonomy = taxonomyManager.GetTaxonomies<FlatTaxonomy>().SingleOrDefault(s => s.Name == "Api_Tags");
 
 
             foreach (var tagName in tagObj)
@@ -148,11 +204,15 @@ namespace Sitefinity_Web.Mvc.Controllers
 
                 string tags = tagName.Name;
 
-                //Get the Tags taxonomy
-                var tagTaxonomy = taxonomyManager.GetTaxonomies<FlatTaxonomy>().SingleOrDefault(s => s.Name == "Tags");
+                
 
                 if (tagTaxonomy == null) return;
 
+                var existingTaxon = tagTaxonomy.Taxa
+                     .OfType<FlatTaxon>()
+                      .SingleOrDefault(t => t.Title.ToLower() == tags.ToLower());
+
+                if (existingTaxon != null) return; // Tag already exists, do not add a new one
                 //Create a new FlatTaxon
                 var taxon = taxonomyManager.CreateTaxon<FlatTaxon>();
 
@@ -168,28 +228,26 @@ namespace Sitefinity_Web.Mvc.Controllers
 
                 taxonomyManager.SaveChanges();
 
-                if (Tags != null)
-                {
+               
                     addTaxon(tagObj, blogPost, tags);
-                }
 
-            }  
+            }
         }
 
-        public void addTaxon(List<TagsPostApi> ListTagsObj, BlogPost blogPost,string tags)
+        public void addTaxon(List<TagsPostApi> ListTagsObj, BlogPost blogPost, string tags)
         {
             var taxonomyManager = TaxonomyManager.GetManager();
-            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
+            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Api_Tags");
 
-  
-                foreach (var ItemTags in Tags.Where(w => w.Title.ToLower() == tags.ToLower()))
+
+            foreach (var ItemTags in Tags.Where(w => w.Title.ToLower() == tags.ToLower()))
+            {
+                if (ItemTags != null)
                 {
-                    if (ItemTags != null)
-                    {
-                        blogPost.Organizer.AddTaxa("Tags", ItemTags.Id);
+                    blogPost.Organizer.AddTaxa("Tags", ItemTags.Id);
 
-                    }
                 }
+            }
         }
 
         public void addCategory(int categoryId, BlogPost blogPost)
@@ -211,37 +269,43 @@ namespace Sitefinity_Web.Mvc.Controllers
             var taxonomyManager = TaxonomyManager.GetManager();
 
             //Get the Categories taxonomy
-            var categoryTaxonomy = taxonomyManager.GetTaxonomies<HierarchicalTaxonomy>().SingleOrDefault(s => s.Name == "Categories");
+            var categoryTaxonomy = taxonomyManager.GetTaxonomies<HierarchicalTaxonomy>().SingleOrDefault(s => s.Name == "Api_Categories");
 
             foreach (var categoryName in categoryObj)
             {
                 string category = categoryName.name;
 
-                    if (categoryTaxonomy == null) return;
+                if (categoryTaxonomy == null) return;
 
-                    //Create a new HierarchicalTaxon
-                    var taxon = taxonomyManager.CreateTaxon<HierarchicalTaxon>();
+                var existingTaxon = categoryTaxonomy.Taxa
+                   .OfType<HierarchicalTaxon>()
+                   .SingleOrDefault(t => t.Title.ToLower() == category.ToLower());
 
-                    //Associate the item with the hierarchical taxonomy
-                    taxon.Taxonomy = categoryTaxonomy;
+                if (existingTaxon != null) return; // Category already exists, do not add a new one
 
-                    taxon.Name = Regex.Replace(categoryName.name.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
-                    taxon.Title = categoryName.name;
-                    taxon.UrlName = Regex.Replace(categoryName.name.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
+                //Create a new HierarchicalTaxon
+                var taxon = taxonomyManager.CreateTaxon<HierarchicalTaxon>();
+
+                //Associate the item with the hierarchical taxonomy
+                taxon.Taxonomy = categoryTaxonomy;
+
+                taxon.Name = Regex.Replace(category.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
+                taxon.Title = category;
+                taxon.UrlName = Regex.Replace(category.ToLower(), @"[^\w\-\!\$\'\(\)\=\@\d_]+", "-");
 
 
-                    //HierarchicalTaxon parentCategory = new HierarchicalTaxon();
+                //HierarchicalTaxon parentCategory = new HierarchicalTaxon();
 
-                    //Check if the parent has been set
-                    //if (parentCategory != null)
-                    //{
-                    //    taxon.Parent = parentCategory;
-                    //}
+                //Check if the parent has been set
+                //if (parentCategory != null)
+                //{
+                //    taxon.Parent = parentCategory;
+                //}
 
-                    //Add it to the list
-                    categoryTaxonomy.Taxa.Add(taxon);
+                //Add it to the list
+                categoryTaxonomy.Taxa.Add(taxon);
 
-                    taxonomyManager.SaveChanges();
+                taxonomyManager.SaveChanges();
 
                 if (categoryTaxonomy != null)
                 {
@@ -250,24 +314,24 @@ namespace Sitefinity_Web.Mvc.Controllers
 
             }
 
-           
+
         }
-        public void addCategories(List<CategoryPostApi> categoryObj, BlogPost blogPost,string category)
+        public void addCategories(List<CategoryPostApi> categoryObj, BlogPost blogPost, string category)
         {
             TaxonomyManager taxonomyManager = TaxonomyManager.GetManager();
-            var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Categories");
+            var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Api_Categories");
 
-           
-                foreach (var categoryItem in Category.Where(i => i.Name.ToLower() == category.ToLower()))
+
+            foreach (var categoryItem in Category.Where(i => i.Name.ToLower() == category.ToLower()))
+            {
+                if (categoryItem != null)
                 {
-                    if (categoryItem != null)
-                    {
-                        blogPost.Organizer.AddTaxa("Category", categoryItem.Id);
-                    }
+                    blogPost.Organizer.AddTaxa("Category", categoryItem.Id);
                 }
+            }
         }
-   
-        public void getImage(int imageId,BlogPost blogPost)
+
+        public void getImage(int imageId, BlogPost blogPost)
         {
             List<ImagePostData.ImageApi> imageObj = new List<ImagePostData.ImageApi>();
             string apiUrl = "https://www.pharmacyitk.com.au/wp-json/wp/v2/media?parent=" + imageId;
@@ -279,10 +343,11 @@ namespace Sitefinity_Web.Mvc.Controllers
             if (response.IsSuccessStatusCode)
             {
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
+                string jsonObj = JsonConvert.SerializeObject(jsonResponse);
                 imageObj = JsonConvert.DeserializeObject<List<ImagePostData.ImageApi>>(jsonResponse);
 
             }
-            createImage(imageObj,blogPost);
+            createImage(imageObj, blogPost);
         }
 
         public void addAlbum()
@@ -310,21 +375,17 @@ namespace Sitefinity_Web.Mvc.Controllers
             albumTitle = imagesAlbum.Title;
         }
 
-        public void createImage(List<ImagePostData.ImageApi> imageObj,BlogPost blogPost)
+        public void createImage(List<ImagePostData.ImageApi> imageObj, BlogPost blogPost)
         {
             addAlbum();
-           foreach(var Imagefile in imageObj)
+            foreach (var Imagefile in imageObj)
             {
                 if (Imagefile.guid.rendered != null)
                 {
-
-
                     // Generate a new GUID for the image
                     System.Guid masterImageId = Guid.NewGuid();
 
                     HttpClient httpClient = new HttpClient();
-                    
-                    HttpResponseMessage response = httpClient.GetAsync(Imagefile.media_details.sizes.medium.source_url).Result;
 
 
                     WebClient client = new WebClient();
@@ -340,16 +401,8 @@ namespace Sitefinity_Web.Mvc.Controllers
 
                     Stream imageStream = memoryStream;
 
-                   
-
-                    if (response.IsSuccessStatusCode)
-                    {
-
-                        // Obtain the image stream from the uploaded file
-                        imageStream = response.Content.ReadAsStreamAsync().Result;
-                    }
-
                     // Obtain the image file name
+
                     string imageFileName = Imagefile.media_details.file;
 
                     // Obtain the image extension from the file name
@@ -358,13 +411,18 @@ namespace Sitefinity_Web.Mvc.Controllers
 
                     string imageTitle = System.IO.Path.GetFileNameWithoutExtension(Imagefile.title.rendered);
 
-
-                    addImage(masterImageId,imageStream, imageFileName, imageExtension, imageTitle, albumId,blogPost);
-
+                    if (imageFileName != null)
+                    {
+                        addImage(masterImageId, imageStream, imageFileName, imageExtension, imageTitle, albumId, blogPost);
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
             }
         }
-        public void addImage(Guid masterImageId,Stream imageStream,string imageFileName, string imageExtension, string imageTitle, Guid albumId,BlogPost blogPost)
+        public void addImage(Guid masterImageId, Stream imageStream, string imageFileName, string imageExtension, string imageTitle, Guid albumId, BlogPost blogPost)
         {
             LibrariesManager librariesManager = LibrariesManager.GetManager();
             Image image = librariesManager.GetImages().Where(i => i.Id == masterImageId).FirstOrDefault();
@@ -407,4 +465,5 @@ namespace Sitefinity_Web.Mvc.Controllers
             }
         }
     }
+
 }
