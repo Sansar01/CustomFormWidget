@@ -196,7 +196,7 @@ namespace Sitefinity_Web.Mvc.Controllers
             }
             var taxonomyManager = TaxonomyManager.GetManager();
             //Get the Tags taxonomy
-            var tagTaxonomy = taxonomyManager.GetTaxonomies<FlatTaxonomy>().SingleOrDefault(s => s.Name == "Api_Tags");
+            var tagTaxonomy = taxonomyManager.GetTaxonomies<FlatTaxonomy>().SingleOrDefault(s => s.Name == "Tags");
 
 
             foreach (var tagName in tagObj)
@@ -237,7 +237,7 @@ namespace Sitefinity_Web.Mvc.Controllers
         public void addTaxon(List<TagsPostApi> ListTagsObj, BlogPost blogPost, string tags)
         {
             var taxonomyManager = TaxonomyManager.GetManager();
-            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Api_Tags");
+            var Tags = taxonomyManager.GetTaxa<FlatTaxon>().Where(t => t.Taxonomy.Name == "Tags");
 
 
             foreach (var ItemTags in Tags.Where(w => w.Title.ToLower() == tags.ToLower()))
@@ -269,7 +269,7 @@ namespace Sitefinity_Web.Mvc.Controllers
             var taxonomyManager = TaxonomyManager.GetManager();
 
             //Get the Categories taxonomy
-            var categoryTaxonomy = taxonomyManager.GetTaxonomies<HierarchicalTaxonomy>().SingleOrDefault(s => s.Name == "Api_Categories");
+            var categoryTaxonomy = taxonomyManager.GetTaxonomies<HierarchicalTaxonomy>().SingleOrDefault(s => s.Name == "Categories");
 
             foreach (var categoryName in categoryObj)
             {
@@ -319,7 +319,7 @@ namespace Sitefinity_Web.Mvc.Controllers
         public void addCategories(List<CategoryPostApi> categoryObj, BlogPost blogPost, string category)
         {
             TaxonomyManager taxonomyManager = TaxonomyManager.GetManager();
-            var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Api_Categories");
+            var Category = taxonomyManager.GetTaxa<HierarchicalTaxon>().Where(t => t.Taxonomy.Name == "Categories");
 
 
             foreach (var categoryItem in Category.Where(i => i.Name.ToLower() == category.ToLower()))
