@@ -1,0 +1,152 @@
+﻿@using System.Web.Mvc;
+@using Telerik.Sitefinity.Frontend.Mvc.Helpers;
+@using Telerik.Sitefinity.Modules.Pages;
+@using Telerik.Sitefinity.UI.MVC;
+@using Telerik.Sitefinity.Services;
+
+@{
+    bool isPreviewMode = SitefinityContext.IsBackend && Request.Url.ToString().ToLower().Contains("action/preview");
+}
+
+<!DOCTYPE html>
+<html @Html.RenderLangAttribute() @Html.RenderDirAttribute()>
+<head>
+    <!-- Basic Page Needs
+    ================================================== -->
+    <meta charset="utf-8">
+
+
+    <!-- Mobile Specific Metas
+    ================================================== -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Creative Agency Bootstrap Template">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="author" content="Themefisher">
+    <meta name="theme-name" content="airspace">
+    <meta name="generator" content="Themefisher Airspace Template v1.0">
+
+
+    @Html.Section("head")
+    @if (Html.RenderDirAttribute().ToString() != "dir=\"rtl\"")
+    {
+        Html.StyleSheet(Url.WidgetContent("~/ResourcePackages/Bootstrap5/assets/dist/css/main.min.css"), "head", true);
+    }
+    else
+    {
+        Html.StyleSheet(Url.WidgetContent("~/ResourcePackages/Bootstrap5/assets/dist/css/main.min.rtl.css"), "head", true);
+    }
+
+    <title>Airspace | Creative Agency Bootstrap Template</title>
+
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/plugins/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/plugins/Ionicons/css/ionicons.min.css" rel="stylesheet" />
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/plugins/animate-css/animate.css" rel="stylesheet" />
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/plugins/magnific-popup/magnific-popup.css" rel="stylesheet" />
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/plugins/slick/slick.css" rel="stylesheet" />
+    <link href="~/ResourcePackages/Bootstrap5/assets/dist/css/maincss/style.css" rel="stylesheet" />
+
+
+    <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/jquery/jquery.min.js"></script>
+    <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/bootstrap/bootstrap.min.js"></script>
+
+</head>
+
+<body id="body">
+
+
+
+    @Html.Section("top")
+
+    @* header section *@
+    <!-- Header Start -->
+    <header class="navigation">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <nav class="navbar navbar-expand-lg p-0">
+                        @Html.SfPlaceHolder("CPHLogo")
+                        <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarsExample09" aria-controls="navbarsExample09" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="ion-android-menu"></span>
+                        </button>
+                        <div class="collapse navbar-collapse ml-auto" id="navbarsExample09">
+                            <ul class="navbar-nav ml-auto">
+                                @Html.SfPlaceHolder("CPHMainNavigation")
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- header close -->
+
+
+
+
+
+    <div class="container-fluid">
+        @Html.SfPlaceHolder("Contentplaceholder1")
+    </div>
+
+
+    <!-- footer Start -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="footer-manu">
+                        @Html.SfPlaceHolder("CPHFooterNavigation")
+                    </div>
+                    @Html.SfPlaceHolder("CPHCopyright")
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!--Scroll to top-->
+    <div id="scroll-to-top" class="scroll-to-top">
+        @Html.SfPlaceHolder("CPHscrollpage")
+    </div>
+
+
+    @* Inline editing scripts and helpers. They should be available only when inline editing is possible. *@
+    @Html.Section("inline-editing")
+    @if (Html.ShouldRenderInlineEditing())
+    {
+        @Html.Script(ScriptRef.MicrosoftAjax, "inline-editing", true)
+        @Html.Script(ScriptRef.MicrosoftAjaxCore, "inline-editing", true)
+        @Html.Script(ScriptRef.JQuery, "inline-editing", true)
+
+        @Html.Script(Url.EmbeddedResource("Telerik.Sitefinity.Resources.Reference", "Telerik.Sitefinity.Resources.Scripts.jquery.ba-outside-events.min.js"), "inline-editing", true)
+        @Html.Script(ScriptRef.KendoAll, "inline-editing", true)
+        @Html.Script(ScriptRef.KendoTimezones, "inline-editing", true)
+        @Html.Script(Url.EmbeddedResource("Telerik.Sitefinity.Resources.Reference", "Telerik.Sitefinity.Resources.Scripts.RequireJS.require.min.js"), "inline-editing", true)
+        @Html.InlineEditingManager(false)
+    }
+    @Html.Section("jquery")
+    @Html.Section("frameworks")
+    @Html.Section("plugins")
+    @Html.Section("bottom")
+
+
+    @if (!SitefinityContext.IsBackend || isPreviewMode)
+    {
+
+        //slick Carousel
+
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/slick/slick.min.js"></script>
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/magnific-popup/jquery.magnific-popup.min.js"></script>
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/shuffle/shuffle.min.js"></script>
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/plugins/SyoTimer/jquery.syotimer.min.js"></script>
+
+        //Google Map
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCcABaamniA6OL5YvYSpB3pFMNrXwXnLwU&libraries=places"></script>
+
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/js/google-map/map.js"></script>
+
+
+        <script src="~/ResourcePackages/Bootstrap5/assets/dist/js/script.js"></script>
+
+    }
+</body>
+</html>
