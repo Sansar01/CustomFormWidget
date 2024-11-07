@@ -1,0 +1,42 @@
+@model Telerik.Sitefinity.Frontend.DynamicContent.Mvc.Models.DynamicContentListViewModel
+
+@using Telerik.Sitefinity.Frontend.DynamicContent.WidgetTemplates.Fields.Helpers;
+@using Telerik.Sitefinity;
+@using Telerik.Sitefinity.Data.ContentLinks;
+@using Telerik.Sitefinity.Frontend.Mvc.Helpers;
+@using Telerik.Sitefinity.Frontend.Mvc.Models;
+@using Telerik.Sitefinity.Web.DataResolving;
+@using Telerik.Sitefinity.Model.ContentLinks;
+@using Telerik.Sitefinity.Modules.Pages;
+@using Telerik.Sitefinity.Frontend.DynamicContent.Mvc.Helpers;
+@using Telerik.Sitefinity.DynamicModules.Builder.Web.UI;
+@using Telerik.Sitefinity.Utilities.TypeConverters;
+
+
+@{
+var typeName = TypeResolutionService.ResolveType("Telerik.Sitefinity.DynamicTypes.Model.ProductCategory.ProductCategoryItem").Name;
+    var pluralTypeName = PluralsResolver.Instance.ToPlural(typeName);
+}
+<div class="@Model.CssClass">
+   
+    <ul>
+        @foreach (var item in Model.Items)
+        {
+      
+          <li>
+                        @item.Fields.Title
+                
+            </li>
+      
+      <h3>
+                    @foreach (var childItem in item.ChildItems(pluralTypeName))
+                    {
+                       @childItem.Fields.Title;
+                    }
+                </h3>
+       
+        }
+      
+     
+    </ul>
+</div>
