@@ -40,3 +40,33 @@ var typeName = TypeResolutionService.ResolveType("Telerik.Sitefinity.DynamicType
      
     </ul>
 </div>
+
+
+##First display parent items and then parent with child items
+
+
+<div class="@Model.CssClass">
+   
+    <ul>
+        @foreach (var item in Model.Items)
+        {
+      
+          <li>
+                        @item.Fields.Title
+                
+            </li>
+      }
+      <h3>
+@foreach (var item in Model.Items)
+        {
+                    @foreach (var childItem in item.ChildItems(pluralTypeName))
+                    {
+                       @childItem.Fields.Title;
+                    }
+}
+                </h3>
+       
+      
+     
+    </ul>
+</div>
