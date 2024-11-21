@@ -1,0 +1,5 @@
+## If code base template is not listed in sitefinity backend 
+
+then put this code under appSetting section in web config file 
+
+<add key="sf:featherFileSystemWatcherBehaviour" value="true"/>
