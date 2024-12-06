@@ -1,0 +1,5 @@
+##Navigate widget list item to another page
+
+@{
+var navigateUrl = HyperLinkHelpers.GetDetailPageUrl(item, ViewBag.DetailsPageId, ViewBag.OpenInSamePage, Model.UrlKeyPrefix);
+}
