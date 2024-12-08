@@ -1,0 +1,6 @@
+##Showing categories in pages
+
+then , if you want to show related list view items one of the following categories then you have to set "ListMode" fields True from advanced option then click on Model button , multiple fields 
+appear then go to List Mode and sets true , then click one of the following categories , a page reload and noticed the url /trial/burgers then get "burgers" from url and displayed of "burger" 
+category then list view item displayed according to category  then click one of the list view item after detail shows of particular item list view items then droped second content types widget in the 
+page so that detail of the particular item should be showed
